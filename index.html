@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Commission Estimator</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 24px;
+      line-height: 1.45;
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+    .card {
+      border: 1px solid rgba(127,127,127,.35);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    input[type="range"] {
+      width: 100%;
+      max-width: 680px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px 14px;
+      margin-top: 12px;
+    }
+    .label {
+      opacity: .7;
+    }
+    .money {
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+    #text {
+      margin-top: 10px;
+    }
+    #text p {
+      margin: 0 0 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Commission Estimator</h1>
+
+    <div class="card">
+      <label for="words"><strong>Word count</strong></label><br>
+      <input id="words" type="range" min="0" max="8000" step="50" value="1000">
+
+      <div class="stats">
+        <div class="label">Estimated commission length</div>
+        <div id="wordsOut">1,000 words</div>
+
+        <div class="label">Estimated price</div>
+        <div class="money" id="priceOut">£0.00</div>
+
+        <div class="label">Breakdown</div>
+        <div id="breakdownOut">—</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div id="text"></div>
+    </div>
+  </div>
+
+<script>
+  const baseText = (
+    "Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua " +
+    "Ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat " +
+    "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur " +
+    "Excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit anim id est laborum"
+  ).split(" ");
+
+  const slider = document.getElementById("words");
+  const wordsOut = document.getElementById("wordsOut");
+  const priceOut = document.getElementById("priceOut");
+  const breakdownOut = document.getElementById("breakdownOut");
+  const textEl = document.getElementById("text");
+
+  function gbp(n) {
+    return n.toLocaleString("en-GB", { style: "currency", currency: "GBP" });
+  }
+
+  function calcCost(words) {
+    const first = Math.min(words, 3000);
+    const second = Math.max(0, words - 3000);
+
+    const a = (first / 1000) * 8.5;
+    const b = (second / 1000) * 12;
+
+    return { total: a + b, first, second, a, b };
+  }
+
+  function buildText(count) {
+    const words = [];
+    for (let i = 0; i < count; i++) {
+      words.push(baseText[i % baseText.length]);
+    }
+
+    textEl.innerHTML = "";
+    let i = 0;
+
+    while (i < words.length) {
+      const len = 80 + ((i * 37) % 60);
+      const slice = words.slice(i, i + len);
+      i += len;
+
+      if (slice.length) {
+        slice[0] = slice[0][0].toUpperCase() + slice[0].slice(1);
+        slice[slice.length - 1] += ".";
+      }
+
+      const p = document.createElement("p");
+      p.textContent = slice.join(" ");
+      textEl.appendChild(p);
+    }
+  }
+
+  function update() {
+    const count = Number(slider.value);
+    wordsOut.textContent = count.toLocaleString("en-GB") + " words";
+
+    const cost = calcCost(count);
+    priceOut.textContent = gbp(cost.total);
+
+    const parts = [];
+    if (cost.first) parts.push(`${cost.first.toLocaleString()} @ £8.50/1k`);
+    if (cost.second) parts.push(`${cost.second.toLocaleString()} @ £12.00/1k`);
+    breakdownOut.textContent = parts.join(" + ") || "—";
+
+    buildText(count);
+  }
+
+  slider.addEventListener("input", update);
+  update();
+</script>
+</body>
+</html>
